@@ -1,0 +1,31 @@
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# User uploads
+uploads/
+uploads/products/
+
+# IDE & OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+Thumbs.db
+
+# Testing
+coverage/
