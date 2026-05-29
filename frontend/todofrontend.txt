@@ -1,0 +1,55 @@
+DANH SÁCH CÁC PHẦN CẦN LÀM ĐỂ TOÀN BỘ FRONTEND ĐẠT CHUẨN DESIGN SYSTEM NIKE VIETNAM (NIKE.COM/VN)
+========================================================================================
+
+Để website bán hàng của bạn sở hữu một giao diện thể thao cao cấp, tối giản và phóng khoáng chuẩn Nike, dưới đây là danh sách các phần cần chỉnh sửa và nâng cấp cho toàn bộ Frontend:
+
+1. FONT CHỮ VÀ TYPOGRAPHY (CHỦ ĐẠO)
+----------------------------------
+[ ] Thêm font chữ chính thức của Nike: Sử dụng font Geometric Sans-serif (như Futura, Helvetica Neue, hoặc Outfit/Inter trên Google Fonts).
+[ ] Tiêu đề và CTA: Bắt buộc dùng chữ HOA (UPPERCASE) có độ đậm cực lớn (font-black, font-extrabold) và khoảng cách chữ hẹp hoặc rộng tùy vị trí (tracking-tighter cho tiêu đề cực lớn, tracking-widest cho nhãn nhỏ).
+[ ] Cân chỉnh line-height: Nike thường dùng line-height rất gọn (leading-none hoặc leading-tight) để tiêu đề trông đanh thép và vững chãi.
+
+2. HỆ THỐNG NÚT BẤM VÀ CTA (BUTTON SYSTEM)
+------------------------------------------
+[ ] Bo tròn tuyệt đối (Rounded-Full): Chuyển toàn bộ các nút bấm hành động (CTA) chính sang dạng hình nhộng bo tròn hoàn toàn (rounded-full). Đây là đặc trưng tương phản lớn nhất giữa Nike (bo tròn) và Adidas (vuông góc).
+[ ] Nút Primary: Nền đen chữ trắng bóng bẩy, không shadow, phóng to diện tích chạm khi hover (bg-black text-white hover:bg-black/80).
+[ ] Nút Secondary: Nền trắng viền đen mảnh chữ đen, hoặc trong suốt viền trắng trên nền ảnh tối (border border-black text-black hover:bg-black/5).
+
+3. CHI TIẾT SẢN PHẨM (PRODUCT DETAIL PAGE - PRODUCTDETAIL.TSX)
+---------------------------------------------------------------
+[ ] Bố cục thư viện ảnh (Left Gallery):
+    - Thiết kế ảnh sản phẩm lớn hiển thị sắc nét chiếm 60% chiều rộng màn hình.
+    - Cột thumbnail ảnh phụ xếp dọc bên trái ảnh chính (Vertical Carousel) chuẩn Nike, thay vì xếp hàng ngang ở dưới.
+[ ] Bảng chọn Kích cỡ (Size Selector):
+    - Các nút kích cỡ hiển thị dạng lưới ô vuông bo góc nhẹ hoặc nút tròn tối giản.
+    - Thêm chỉ báo mờ và gạch chéo đối với các size đã hết hàng (Out of Stock) thay vì ẩn đi.
+[ ] Bộ đôi CTA chính:
+    - Nút "THÊM VÀO GIỎ HÀNG" (Add to Bag): Rộng 100%, bo tròn hoàn toàn, nền đen tuyền.
+    - Nút "THÊM VÀO DANH SÁCH YÊU THÍCH" (Favorite): Rộng 100%, bo tròn hoàn toàn, nền trắng viền đen, có icon Trái tim rỗng tinh tế ở giữa.
+[ ] Phần Mô tả Accordion (Product Accordion):
+    - Rút gọn phần Mô tả chi tiết và Thông số kỹ thuật thành các thanh Accordion đóng/mở mượt mà bằng viền kẻ ngang siêu mảnh (border-b border-gray-200), giúp trang chi tiết gọn gàng, cuộn trang nhanh.
+
+4. TRANG THANH TOÁN (CHECKOUT PAGE - CHECKOUT.TSX)
+---------------------------------------------------
+[ ] Tối giản hóa biểu mẫu (Minimal Inputs):
+    - Bỏ các khung input viền xám dày. Sử dụng đường kẻ dưới mảnh (border-b border-gray-300 focus:border-black rounded-none).
+    - Font chữ hoa cho các nhãn nhỏ (label) chỉ báo phía trên input.
+[ ] Bảng tóm tắt đơn hàng (Order Summary Panel):
+    - Đặt bên phải màn hình dạng Sticky, viền bo tròn nhẹ hoặc không viền, nền xám nhạt tinh tế (bg-gray-50).
+    - Hiển thị tóm tắt ảnh sản phẩm vuông nhỏ gọn cùng thông tin size/color rõ ràng.
+
+5. TRANG TÀI KHOẢN (ACCOUNT PAGE - ACCOUNT.TSX)
+-----------------------------------------------
+[x] Sidebar Tabs: Thiết kế menu tab tối giản, ngăn cách bằng các đường kẻ ngang siêu mảnh. Trạng thái hoạt động hiển thị bằng chữ đen đậm nổi bật (font-black text-black).
+[x] Lịch sử đơn hàng: Các thẻ đơn hàng hiển thị dạng các block chữ nhật viền xám nhạt mỏng, không đổ bóng, phân chia rõ ràng tiến độ: Chờ xác nhận, Đang giao, Đã nhận.
+
+6. GIỎ HÀNG (CART PAGE / CART DRAWER - CARTDRAWER.TSX)
+------------------------------------------------------
+[ ] Quantity Stepper: Thiết kế nút tăng giảm số lượng gọn gàng nằm ngang, sử dụng nút bấm tròn nhỏ hoặc đường viền mảnh thanh thoát.
+[ ] Badge chỉ số giỏ hàng: Trên Navbar sử dụng chấm số tròn đen gọn gàng tinh giản.
+
+7. HIỆU ỨNG TƯƠNG TÁC (MICRO-ANIMATIONS)
+-----------------------------------------
+[ ] Image Zoom: Rê chuột vào ảnh sản phẩm tự động zoom nhẹ mượt mà (scale-[1.03] transition-all duration-505).
+[ ] Sliding Underlines: Menu điều hướng chính có đường gạch chân mượt mà chạy trượt theo con trỏ khi hover.
+[ ] Fade-In Transitions: Toàn bộ các trạng thái lọc/chuyển tab sử dụng hiệu ứng chuyển đổi mờ dần nhanh (animate-fade-in) để tạo cảm giác trang chạy rất nhanh và mượt mà.

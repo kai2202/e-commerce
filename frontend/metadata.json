@@ -1,0 +1,6 @@
+{
+  "name": "E-Commerce Client & Admin Portal",
+  "description": "An advanced e-commerce application with fully integrated customer features and rich management controls for staff and administrators in Vietnamese.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

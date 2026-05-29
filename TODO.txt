@@ -1,0 +1,155 @@
+================================================================================
+ DANH SÁCH CÁC VẤN ĐỀ VÀ PHẦN CẦN CẢI THIỆN ĐỂ HOÀN THIỆN WEBSITE E-COMMERCE
+================================================================================
+
+Dưới đây là kết quả kiểm tra và đánh giá toàn bộ dự án (backend và frontend) so với một website TMĐT thực tế trong sản xuất (production-ready). Danh sách được chia theo các nhóm vấn đề từ nghiêm trọng đến các đề xuất cải thiện.
+
+--------------------------------------------------------------------------------
+1. CÁC VẤN ĐỀ BẢO MẬT NGHIÊM TRỌNG (CRITICAL SECURITY ISSUES)
+--------------------------------------------------------------------------------
+[x] Băm mật khẩu (Password Hashing):
+    - Hiện tại: Mật khẩu người dùng được lưu dưới dạng văn bản thuần (plaintext) trong database và so sánh trực tiếp (ví dụ: `user.password === password` trong authController.ts). Điều này cực kỳ nguy hiểm.
+    - Cải thiện: Cần sử dụng thư viện `bcryptjs` hoặc `argon2` để băm mật khẩu trước khi lưu vào DB và sử dụng phương thức so sánh an toàn (`bcrypt.compare`).
+
+[x] Xác thực Token Google thiếu bảo mật (Insecure Google Token Decoding):
+    - Hiện tại: Ở endpoint `/api/auth/google-register`, Token Google (ID Token) chỉ được giải mã thô bằng Base64 ở phía backend (`Buffer.from(base64, 'base64')`) mà KHÔNG hề kiểm tra chữ ký số (signature) của Google. Bất kỳ ai cũng có thể tự tạo một token giả mạo với email của người khác để đăng nhập.
+    - Cải thiện: Cần sử dụng thư viện chính thức của Google `google-auth-library` để verify token:
+      `const ticket = await client.verifyIdToken({ idToken: token, audience: CLIENT_ID });`
+
+[x] Kiểm tra và làm sạch dữ liệu đầu vào (Input Validation & Sanitization):
+    - Hiện tại: Các API nhận dữ liệu từ client (như đăng ký, đăng nhập, đặt hàng, tạo sản phẩm) không được validate định dạng ở tầng backend. Có nguy cơ bị tấn công NoSQL Injection, XSS hoặc gửi dữ liệu rác làm hỏng DB.
+    - Cải thiện: Sử dụng thư viện `express-validator` để validate dữ liệu đầu vào tại các route.
+
+[x] Hardcode các chuỗi bảo mật (Hardcoded Secrets):
+    - Hiện tại: Các khóa bí mật như `JWT_SECRET` ('supersecretkey'), `JWT_REFRESH_SECRET` ('superrefreshsecret'), và `session secret` ('super_secret_ecom_key') đang bị hardcode làm giá trị mặc định.
+    - Cải thiện: Bắt buộc cấu hình qua file `.env` và không commit các file chứa secret thực tế lên Github.
+
+[x] Nút đăng nhập Admin nhanh (Quick Admin Login Bypass):
+    - Hiện tại: Có nút hoặc hàm đăng nhập nhanh tài khoản Admin không cần nhập mật khẩu trong code frontend/backend, điều này tạo ra lỗ hổng bảo mật nghiêm trọng.
+    - Cải thiện: Xóa bỏ hoàn toàn các cơ chế bypass đăng nhập này trước khi deploy sản phẩm.
+
+[x] Bảo vệ các API Admin ở phía Backend:
+    - Hiện tại: Một số route hoặc controller chưa kiểm tra quyền admin một cách chặt chẽ ở phía backend, hoặc chỉ kiểm tra lỏng lẻo.
+    - Cải thiện: Áp dụng middleware kiểm tra quyền (`admin` middleware) cho tất cả các API quản trị hệ thống (GET/POST/PUT/DELETE các tài nguyên quan trọng).
+
+--------------------------------------------------------------------------------
+2. CÁC TÍNH NĂNG CÒN THIẾU CỦA MỘT WEBSITE TMĐT THỰC TẾ
+--------------------------------------------------------------------------------
+[x] Tìm kiếm và Lọc sản phẩm phía Server (Server-side Search & Filter):
+    - Hiện tại: Việc tìm kiếm và lọc sản phẩm (theo danh mục, giá, thương hiệu, màu sắc, kích thước) đang được thực hiện ở Client-side (tải hết sản phẩm về rồi lọc bằng Javascript). Cách này chỉ chạy được khi website có ít sản phẩm. Nếu có hàng ngàn sản phẩm, trang web sẽ bị đơ/sập.
+    - Cải thiện: Chuyển logic tìm kiếm và lọc sang API Backend sử dụng các query parameters của Mongoose (ví dụ: `Product.find({ name: { $regex: search, $options: 'i' } })`).
+
+[x] Phân trang API Sản phẩm (Product Pagination):
+    - Hiện tại: API `getProducts` trả về toàn bộ sản phẩm cùng một lúc.
+    - Cải thiện: Thêm tham số phân trang `page` và `limit` vào API để chỉ load 10-20 sản phẩm mỗi lần, giúp tối ưu tốc độ tải trang.
+
+[x] Quản lý kho hàng thực tế (Inventory Management):
+    - Hiện tại: Khi người dùng đặt mua một biến thể sản phẩm (variant), hệ thống không thực hiện kiểm tra số lượng tồn kho (stock) còn lại của biến thể đó tại backend, và không trừ số lượng tồn kho một cách an toàn (atomic update) khi đơn hàng được tạo.
+    - Cải thiện: Thêm logic kiểm tra kho hàng trước khi tạo đơn và dùng transaction hoặc atomic operators (`$inc` với giá trị âm) để giảm tồn kho.
+
+[x] Chức năng Đánh giá & Phản hồi thực tế (Reviews API & Frontend):
+    - Hiện tại: Có định nghĩa Model `Review` trong cơ sở dữ liệu nhưng chưa có controller/route để người dùng thực hiện gửi đánh giá hoặc xem danh sách đánh giá của sản phẩm đó từ DB.
+    - Cải thiện: Viết thêm API CRUD cho Review và thiết kế khu vực hiển thị bình luận/đánh giá sao trên trang chi tiết sản phẩm ở frontend.
+
+[x] Tích hợp cổng thanh toán thực tế (Payment Gateway Integration):
+    - Hiện tại: Chức năng thanh toán trực tuyến chỉ mang tính chất mô phỏng/giả lập (ví dụ: cập nhật trạng thái đã thanh toán ngay lập tức).
+    - Cải thiện: Tích hợp cổng thanh toán thực tế như VNPAY, MoMo, ZaloPay (ở Việt Nam) hoặc Stripe/PayPal (quốc tế) thông qua webhook để cập nhật trạng thái đơn hàng tự động và an toàn.
+
+[ ] Hệ thống gửi Email tự động (Email Notifications):
+    - Hiện tại: Không có cơ chế gửi email cho khách hàng.
+    - Cải thiện: Sử dụng thư viện `nodemailer` kết hợp với các dịch vụ gửi mail (SendGrid, Mailgun, Gmail OAuth2) để:
+      * Gửi mail xác nhận đơn hàng thành công kèm chi tiết hóa đơn.
+      * Gửi mail xác minh tài khoản khi đăng ký.
+      * Gửi mail đặt lại mật khẩu (Reset Password Link) khi người dùng quên mật khẩu.
+
+[x] Khách hàng tự hủy đơn hàng (Order Cancellation):
+    - Hiện tại: Chỉ có Admin mới có quyền đổi trạng thái đơn hàng thành `cancelled`. Người dùng không có nút Hủy đơn hàng ở trang cá nhân.
+    - Cải thiện: Thêm nút "Hủy đơn hàng" cho người dùng khi đơn hàng ở trạng thái `pending` (chưa xử lý).
+
+[x] Đặt hàng không cần tài khoản (Guest Checkout):
+    - Hiện tại: Người dùng bắt buộc phải đăng ký/đăng nhập thì mới được mua hàng.
+    - Cải thiện: Cho phép người dùng điền thông tin giao hàng và thanh toán trực tiếp mà không cần tài khoản (chỉ cần nhập Email và SĐT nhận đơn). Chỉ bắt đăng nhập nếu muốn đánh giá hàng hoặc đánh giá sao
+
+[x] Theo dõi đơn hàng (Order Tracking Page):
+    - Hiện tại: Không có trang tra cứu tình trạng đơn hàng nhanh cho khách hàng.
+    - Cải thiện: Tạo trang tra cứu đơn hàng dựa trên Mã đơn hàng (Order ID) và Số điện thoại/Email người nhận.
+
+--------------------------------------------------------------------------------
+3. BẤT HỢP LÝ TRONG THIẾT KẾ CƠ SỞ DỮ LIỆU (DATABASE MODEL ISSUES)
+--------------------------------------------------------------------------------
+[x] Hệ thống định danh kép (Dual ID System):
+    - Hiện tại: Trong Model `Order` và các Subdocument như `Address` có định nghĩa trường `id: String` tự sinh (dạng `ord-${Date.now()}`) song song với trường `_id` mặc định dạng `ObjectId` của MongoDB. Điều này gây dư thừa, dễ nhầm lẫn khi truy vấn.
+    - Cải thiện: Nên bỏ trường `id: String` tự chế này và sử dụng luôn `_id` của MongoDB hoặc thiết kế một trường mã hóa ngắn gọn hơn nếu muốn hiển thị cho khách hàng (ví dụ: `orderCode` có độ dài 6-8 ký tự ngẫu nhiên).
+
+[x] Liên kết khóa ngoại không chính xác (No Mongoose References):
+    - Hiện tại: Các trường liên kết như `categoryId` trong Product, `userId` trong Order, `productId` trong OrderItem đang được định nghĩa là kiểu dữ liệu `String`.
+    - Cải thiện: Chuyển các trường này thành kiểu `mongoose.Schema.Types.ObjectId` cùng thuộc tính `ref` trỏ tới model tương ứng để có thể dùng tính năng `.populate()` của Mongoose giúp gộp bảng (join) dễ dàng và tối ưu hiệu năng.
+
+[x] Kiểu dữ liệu ngày tháng không chuẩn (String Date Fields):
+    - Hiện tại: Trường `dateAdded` (Product), `date` (Order), `history.date` (Order history) đang lưu dạng chuỗi văn bản (`String`). Điều này khiến việc lọc sản phẩm mới, lọc đơn hàng theo ngày hoặc thống kê doanh thu theo tuần/tháng/năm cực kỳ khó khăn.
+    - Cải thiện: Thay đổi kiểu dữ liệu thành kiểu `Date` (hoặc để Mongoose tự quản lý qua thuộc tính `timestamps: true` có sẵn trường `createdAt` và `updatedAt`).
+
+[x] Thiếu Index (Chỉ mục) tối ưu hóa truy vấn:
+    - Hiện tại: Database chưa được tạo Index cho các trường thường xuyên tìm kiếm hoặc lọc (như `categoryId` của Product, `userId` của Order, `status` của Order).
+    - Cải thiện: Thêm chỉ mục (`index: true`) cho các trường này để tăng tốc độ truy vấn khi số lượng bản ghi lên tới hàng chục nghìn.
+
+--------------------------------------------------------------------------------
+4. CÁC VẤN ĐỀ TRÊN GIAO DIỆN & TRẢI NGHIỆM NGƯỜI DÙNG (FRONTEND & UX ISSUES)
+--------------------------------------------------------------------------------
+[x] Đồng bộ Giỏ hàng & Danh sách yêu thích với Backend (Sync Cart/Wishlist to DB):
+    - Hiện tại: Giỏ hàng và Wishlist chỉ được lưu ở `localStorage` của trình duyệt. Nếu người dùng đăng nhập trên điện thoại hoặc máy tính khác, giỏ hàng của họ sẽ trống rỗng.
+    - Cải thiện: Khi người dùng đã đăng nhập, hãy đồng bộ giỏ hàng và danh sách yêu thích lên database thông qua API để họ có trải nghiệm nhất quán trên mọi thiết bị.
+
+[x] Thiếu Trạng thái tải dữ liệu (Loading/Skeleton States):
+    - Hiện tại: Khi chuyển trang hoặc gọi API, ứng dụng không hiển thị trạng thái chờ (loading spinner hoặc skeleton loader), tạo cảm giác trang web bị đơ.
+    - Cải thiện: Bổ sung các component Skeleton mô phỏng khung sản phẩm trong lúc đợi dữ liệu tải về.
+
+[x] Quản lý Route Admin chưa an toàn ở Frontend:
+    - Hiện tại: Các route admin ở React (`/admin/*`) chỉ được ẩn/hiện dựa trên giao diện người dùng. Nếu người dùng thông thường cố tình gõ trực tiếp URL `/admin` trên trình duyệt, họ vẫn có thể truy cập vào giao diện quản trị (dù API không gọi được dữ liệu).
+    - Cải thiện: Sử dụng một component `ProtectedRoute` để kiểm tra role của user trong Redux State, nếu không phải `admin`/`staff` thì tự động redirect về trang chủ hoặc trang 403.
+
+[x] Menu thả xuống (Navbar Dropdown) không đóng khi bấm ra ngoài:
+    - Hiện tại: Khi bấm vào avatar để mở dropdown thông tin tài khoản trên Navbar, dropdown này không tự đóng lại nếu người dùng bấm chuột ra vùng ngoài menu.
+    - Cải thiện: Sử dụng custom hook để bắt sự kiện click bên ngoài vùng dropdown (sử dụng Ref) để đóng menu tự động.
+
+[x] API Base URL bị Hardcode:
+    - Hiện tại: Trong file axios client (`api.ts`), đường dẫn API đang được hardcode trực tiếp là `http://localhost:5000`. Khi deploy lên server thực tế, app frontend sẽ bị lỗi kết nối do vẫn trỏ về localhost.
+    - Cải thiện: Sử dụng biến môi trường: `baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000'`.
+
+[x] Lỗi chính tả tiếng Việt:
+    - Hiện tại: File `Navbar.tsx` dòng 170 hiển thị chữ "Vàn Trang Admin" thay vì "Vào Trang Admin".
+    - Cải thiện: Sửa lại các lỗi chính tả nhỏ trên giao diện để trang web trông chuyên nghiệp hơn.
+
+[x] Thiếu trang lỗi 404 và Error Boundary:
+    - Hiện tại: Khi người dùng truy cập một route không hợp lệ, trang web hiển thị khoảng trắng hoặc bị lỗi. Nếu một component nhỏ bị crash, toàn bộ ứng dụng React sẽ bị trắng trang.
+    - Cải thiện: Thiết kế trang 404 (Page Not Found) đẹp mắt và bao bọc ứng dụng bằng `ErrorBoundary` để bắt lỗi runtime.
+
+--------------------------------------------------------------------------------
+5. HIỆU NĂNG & KIẾN TRÚC HỆ THỐNG (PERFORMANCE & ARCHITECTURE ISSUES)
+--------------------------------------------------------------------------------
+[x] Quản lý Session bằng Memory ở Backend (In-Memory Session):
+    - Hiện tại: Hệ thống dùng `express-session` nhưng cấu hình mặc định lưu session trong bộ nhớ RAM của server (`MemoryStore`). Mỗi lần restart server backend, tất cả người dùng đang đăng nhập sẽ bị logout đột ngột. Cơ chế này cũng không thể mở rộng (scale) khi chạy nhiều instance server.
+    - Cải thiện: Sử dụng `connect-mongo` hoặc Redis làm session store để lưu trữ thông tin session bền vững.
+
+[x] Tải sản phẩm dư thừa lúc khởi chạy ứng dụng:
+    - Hiện tại: Ứng dụng dispatch action gọi API lấy toàn bộ sản phẩm ngay khi load trang chủ hoặc khởi chạy app, gây lãng phí băng thông và làm chậm thời gian hiển thị trang đầu tiên (FCP).
+    - Cải thiện: Chỉ gọi API lấy sản phẩm tại các trang thực sự cần hiển thị danh sách sản phẩm và load theo danh mục hoặc phân trang.
+
+[ ] Tối ưu hóa Hình ảnh (Image Optimization):
+    - Hiện tại: Các hình ảnh sản phẩm được upload trực tiếp với dung lượng gốc, không được nén hay chuyển đổi định dạng. Điều này gây tốn dung lượng ổ cứng và làm tải trang cực kỳ chậm khi hiển thị danh sách sản phẩm lớn.
+    - Cải thiện:
+      * Sử dụng thư viện nén ảnh khi upload ở backend (ví dụ: `sharp` để resize và chuyển sang định dạng `.webp` trước khi lưu).
+      * Sử dụng các dịch vụ lưu trữ và CDN hình ảnh như Cloudinary để tự động tối ưu hóa size ảnh theo kích thước màn hình client.
+
+[x] Cấu hình CORS cứng nhắc:
+    - Hiện tại: CORS đang cấu hình chỉ cho phép duy nhất domain `http://localhost:3000` hoặc `http://localhost:5173`.
+    - Cải thiện: Cấu hình CORS động bằng cách đọc danh sách các origin được phép từ file cấu hình `.env`.
+
+[x] Middleware xử lý lỗi tập trung (Global Error Handling Middleware):
+    - Hiện tại: Backend chưa có middleware xử lý lỗi chung. Mỗi controller đều phải viết các khối `try-catch` lặp đi lặp lại và phản hồi lỗi thủ công.
+    - Cải thiện: Viết một global error handling middleware trong Express để gom tất cả lỗi phát sinh về một mối, ghi log lỗi ra file và trả về response chuẩn hóa cho client.
+
+[x] Ghi Log hệ thống (Logging System):
+    - Hiện tại: Hệ thống đang sử dụng `console.error` hoặc `console.log` thủ công. Các log này sẽ bị mất khi đóng terminal và khó debug trên môi trường production.
+    - Cải thiện: Tích hợp thư viện ghi log chuyên nghiệp như `winston` hoặc `pino`, kết hợp với `morgan` để log tự động mọi HTTP Request gửi tới server.
+================================================================================
