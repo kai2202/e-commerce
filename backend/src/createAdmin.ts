@@ -22,7 +22,7 @@ const createDefaultAdmin = async () => {
       const admin = await User.create({
         name: 'Quản Trị Viên',
         email: 'admin@ecommerce.vn',
-        password: 'admin123',
+        password: process.env.ADMIN_PASSWORD || 'admin123',
         phone: '0901234567',
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
         role: 'admin',
@@ -32,7 +32,7 @@ const createDefaultAdmin = async () => {
 
       console.log('🎉 Đã tạo tài khoản admin thành công!');
       console.log(`   Email: ${admin.email}`);
-      console.log(`   Password: admin123`);
+      console.log(`   Password: ${process.env.ADMIN_PASSWORD ? '********' : 'admin123 (default)'}`);
       console.log(`   Role: ${admin.role}`);
     }
   } catch (error) {

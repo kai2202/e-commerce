@@ -2,8 +2,16 @@
 Thumbs.db
 .vscode/
 .idea/
+# Development/Notes
+*.txt
 *.log
 logs/
+backups/
+
+# Environment files
+.env
+.env.local
+.env.*.local
 
 # Node
 node_modules/
@@ -15,3 +23,5 @@ build/
 
 # Backend uploads
 backend/uploads/
+backend/backups/
+backend/logs/
